@@ -85,7 +85,8 @@ def main(args):
         retina_masks=args.retina,
         imgsz=args.imgsz,
         conf=args.conf,
-        iou=args.iou    
+        iou=args.iou,
+        save_txt=True
         )
     bboxes = None
     points = None
