@@ -43,6 +43,9 @@ class Predictor(BasePredictor):
         better_quality: bool = Input(
             description="better quality using morphologyEx", default=False
         ),
+        microDims: tuple = Input(
+            description = "dimensions of image resize for shortest path", default = (50, 50)
+        )
     ) -> Path:
         """Run a single prediction on the model"""
 
@@ -77,6 +80,7 @@ class Predictor(BasePredictor):
             retina=retina,
             text_prompt=text_prompt,
             withContours=withContours,
+            microDims=microDims
         )
         args.point_prompt = ast.literal_eval(args.point_prompt)
         args.box_prompt = ast.literal_eval(args.box_prompt)

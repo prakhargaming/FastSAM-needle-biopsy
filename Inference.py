@@ -1,3 +1,5 @@
+#inference.py
+
 import argparse
 from fastsam import FastSAM, FastSAMPrompt 
 import ast
@@ -68,6 +70,9 @@ def parse_args():
     parser.add_argument(
         "--withContours", type=bool, default=False, help="draw the edges of the masks"
     )
+    parser.add_argument(
+        "--microDims", type=str, default="50,50", help="dimensions of image resize for shortest path (format: width,height)"
+    )
     return parser.parse_args()
 
 
@@ -104,14 +109,17 @@ def main(args):
         point_label = args.point_label
     else:
         ann = prompt_process.everything_prompt()
+
+    microDims = tuple(map(int, args.microDims.split(',')))
     prompt_process.plot(
         annotations=ann,
         output_path=args.output+args.img_path.split("/")[-1],
-        bboxes = bboxes,
-        points = points,
-        point_label = point_label,
+        bboxes=bboxes,
+        points=points,
+        point_label=point_label,
         withContours=args.withContours,
         better_quality=args.better_quality,
+        microDims=microDims  # Use the parsed microDims here
     )
 
 

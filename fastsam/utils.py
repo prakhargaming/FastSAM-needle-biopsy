@@ -1,7 +1,9 @@
 import numpy as np
 import torch
+import cv2
 from PIL import Image
-
+from scipy.spatial.distance import cdist
+import matplotlib.pyplot as plt
 
 def adjust_bboxes_to_image_border(boxes, image_shape, threshold=20):
     '''Adjust bounding boxes to stick to image border if they are within a certain threshold.
@@ -28,15 +30,12 @@ def adjust_bboxes_to_image_border(boxes, image_shape, threshold=20):
 
     return boxes
 
-
-
 def convert_box_xywh_to_xyxy(box):
     x1 = box[0]
     y1 = box[1]
     x2 = box[0] + box[2]
     y2 = box[1] + box[3]
     return [x1, y1, x2, y2]
-
 
 def bbox_iou(box1, boxes, iou_thres=0.9, image_shape=(640, 640), raw_output=False):
     '''Compute the Intersection-Over-Union of a bounding box with respect to an array of other bounding boxes.
@@ -75,7 +74,6 @@ def bbox_iou(box1, boxes, iou_thres=0.9, image_shape=(640, 640), raw_output=Fals
 
     return high_iou_indices
 
-
 def image_to_np_ndarray(image):
     if type(image) is str:
         return np.array(Image.open(image))
@@ -84,3 +82,101 @@ def image_to_np_ndarray(image):
     elif type(image) is np.ndarray:
         return image
     return None
+
+def process_image(output_path, img):
+
+    # Convert to HSV color space
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # Define range for green color in HSV
+    lower_green = (36, 25, 25)
+    upper_green = (70, 255, 255)
+
+    # Create a mask for green pixels
+    mask = cv2.inRange(hsv, lower_green, upper_green)
+
+    # Create the black and white mask
+    bw_mask = np.zeros_like(img[:,:,0])  # Create a single channel image
+    bw_mask[mask > 0] = 255  # Set green pixels to white (255)
+    
+    bw_mask = cv2.GaussianBlur(bw_mask,(31,31),0)
+    bw_mask = cv2.threshold(bw_mask, 100, 255, cv2.THRESH_BINARY)[1]
+
+    cv2.imwrite(output_path, bw_mask)
+    
+    return bw_mask
+
+def resize_image(image, dims):
+    if not isinstance(image, np.ndarray):
+        raise ValueError("Input must be a numpy array")
+    
+    
+    resized_image = cv2.resize(image, (dims[0], dims[1]), interpolation=cv2.INTER_AREA)
+    
+    # Convert the resized image to grayscale if it's not already
+    if len(resized_image.shape) == 3:
+        grayscale_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2GRAY)
+    else:
+        grayscale_image = resized_image
+    
+    # Normalize the array to have values between 0 and 1
+    normalized_array = grayscale_image.astype(np.float32) / 255.0
+    
+    return normalized_array
+
+def find_shortest_path(mask, dims=(50,50)):
+    bitmap = resize_image(mask, dims)
+    
+    # Find coordinates of white pixels
+    white_pixels = np.argwhere(bitmap > 0.5)  # Threshold at 0.5 for binary classification
+    
+    if len(white_pixels) <= 1:
+        return white_pixels
+    
+    # Use nearest neighbor algorithm to find an approximate shortest path
+    path = [0]  # Start with the first pixel
+    unvisited = set(range(1, len(white_pixels)))
+    
+    while unvisited:
+        current = path[-1]
+        distances = cdist([white_pixels[current]], white_pixels[list(unvisited)])
+        nearest = np.argmin(distances[0])
+        next_pixel = list(unvisited)[nearest]
+        path.append(next_pixel)
+        unvisited.remove(next_pixel)
+    
+    # Return the coordinates of the approximate shortest path
+    return white_pixels[path]
+
+def visualize_path(output_path, original_image, path, resize_dims):
+    # Create a copy of the original image for visualization
+    vis_image = original_image.copy()
+    
+    # If the image is grayscale, convert it to RGB
+    if len(vis_image.shape) == 2:
+        vis_image = cv2.cvtColor(vis_image, cv2.COLOR_GRAY2RGB)
+    
+    # Get the dimensions of the original image and the resized image
+    orig_height, orig_width = original_image.shape[:2]
+    resized_height, resized_width = resize_dims[0], resize_dims[1] # As per the resize_image function
+    
+    # Scale factors
+    scale_y = orig_height / resized_height
+    scale_x = orig_width / resized_width
+    
+    # Function to scale coordinates
+    def scale_coord(coord):
+        return (int(coord[1] * scale_x), int(coord[0] * scale_y))
+    
+    # Draw the path on the image
+    for i in range(len(path) - 1):
+        start_point = scale_coord(path[i])
+        end_point = scale_coord(path[i+1])
+        cv2.line(vis_image, start_point, end_point, (0, 255, 0), 2)
+    
+    # Mark the start and end points
+    cv2.circle(vis_image, scale_coord(path[0]), 5, (255, 0, 0), -1)  # Start point in blue
+    cv2.circle(vis_image, scale_coord(path[-1]), 5, (0, 0, 255), -1) 
+
+    cv2.imwrite(output_path, vis_image)
+    

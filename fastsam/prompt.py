@@ -1,12 +1,13 @@
+#prompy.py
+
 import os
 import sys
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from .orangeScript import process_image
-from .utils import image_to_np_ndarray
 from PIL import Image
+from .utils import image_to_np_ndarray, process_image, find_shortest_path, visualize_path
 
 class FastSAMPrompt:
 
@@ -181,15 +182,16 @@ class FastSAMPrompt:
             
     # Remark for refactoring: IMO a function should do one thing only, storing the image and plotting should be seperated and do not necessarily need to be class functions but standalone utility functions that the user can chain in his scripts to have more fine-grained control. 
     def plot(self,
-             annotations,
-             output_path,
-             bboxes=None,
-             points=None,
-             point_label=None,
-             mask_random_color=False,
-             better_quality=True,
-             retina=False,
-             withContours=True):
+         annotations,
+         output_path,
+         bboxes=None,
+         points=None,
+         point_label=None,
+         mask_random_color=False,
+         better_quality=True,
+         retina=False,
+         withContours=True,
+         microDims=(50, 50)):
         if len(annotations) == 0:
             return None
         result = self.plot_to_result(
@@ -203,17 +205,36 @@ class FastSAMPrompt:
             withContours,
         )
 
-        path = os.path.dirname(os.path.abspath(output_path))
-        if not os.path.exists(path):
-            os.makedirs(path)
-        result = result[:, :, ::-1]
-        directory = os.path.dirname(output_path)
+        # Create subdirectories
+        base_dir = os.path.dirname(output_path)
+        green_dir = os.path.join(base_dir, "green")
+        path_dir = os.path.join(base_dir, "path")
+        mask_dir = os.path.join(base_dir, "mask")
+
+        for dir_path in [green_dir, path_dir, mask_dir]:
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path)
+
+        # Prepare filenames
         filename = os.path.basename(output_path)
         green_filename = f"green_{filename}"
-        green_output_path = os.path.join(directory, green_filename)
+        path_filename = f"path_{filename}"
+        mask_filename = f"mask_{filename}"
+
+        # Save green file
+        green_output_path = os.path.join(green_dir, green_filename)
         cv2.imwrite(green_output_path, result)
-        process_image(output_path, result)
-     
+
+        # Process and save mask
+        bw_mask = process_image(output_path, result)
+        mask_output_path = os.path.join(mask_dir, mask_filename)
+        cv2.imwrite(mask_output_path, bw_mask)
+
+        # Find shortest path and visualize
+        path = find_shortest_path(bw_mask, microDims)
+        path_output_path = os.path.join(path_dir, path_filename)
+        visualize_path(path_output_path, result, path, microDims)
+        
     #   CPU post process
     def fast_show_mask(
         self,

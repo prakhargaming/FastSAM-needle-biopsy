@@ -1,3 +1,5 @@
+#process_multiple_images.py
+
 import argparse
 from fastsam import FastSAM, FastSAMPrompt 
 import ast
@@ -75,6 +77,9 @@ def parse_args():
     parser.add_argument(
         "--withContours", type=bool, default=False, help="draw the edges of the masks"
     )
+    parser.add_argument(
+         "--microDims", type=tuple, default=(50,50), help="dimensions of image resize for shortest path"
+    )
     return parser.parse_args()
 
 
@@ -123,10 +128,8 @@ def main(args):
             point_label=point_label,
             withContours=args.withContours,
             better_quality=args.better_quality,
+            microDims=args.microDims  # Add this line to include the new parameter
         )
-
-
-
 
 if __name__ == "__main__":
     args = parse_args()
