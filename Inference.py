@@ -25,13 +25,13 @@ def parse_args():
         "--text_prompt", type=str, default=None, help='use text prompt eg: "a dog"'
     )
     parser.add_argument(
-        "--conf", type=float, default=0.4, help="object confidence threshold"
+        "--conf", type=float, default=0.7, help="object confidence threshold"
     )
     parser.add_argument(
         "--output", type=str, default="./output/", help="image save path"
     )
     parser.add_argument(
-        "--randomcolor", type=bool, default=True, help="mask random color"
+        "--randomcolor", type=bool, default=False, help="mask random color"
     )
     parser.add_argument(
         "--point_prompt", type=str, default="[[0,0]]", help="[[x1,y1],[x2,y2]]"
@@ -86,7 +86,6 @@ def main(args):
         imgsz=args.imgsz,
         conf=args.conf,
         iou=args.iou,
-        save_txt=True
         )
     bboxes = None
     points = None

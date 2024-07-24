@@ -73,7 +73,7 @@ class Predictor(BasePredictor):
             output=out_path,
             point_label=point_label,
             point_prompt=point_prompt,
-            randomcolor=True,
+            randomcolor=False,
             retina=retina,
             text_prompt=text_prompt,
             withContours=withContours,

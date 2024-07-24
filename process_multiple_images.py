@@ -1,6 +1,4 @@
 import argparse
-import numpy as np
-import cv2
 from fastsam import FastSAM, FastSAMPrompt 
 import ast
 import torch
@@ -27,13 +25,13 @@ def parse_args():
         "--text_prompt", type=str, default=None, help='use text prompt eg: "a dog"'
     )
     parser.add_argument(
-        "--conf", type=float, default=0.4, help="object confidence threshold"
+        "--conf", type=float, default=0.7, help="object confidence threshold"
     )
     parser.add_argument(
         "--output", type=str, default="./output/", help="image save path"
     )
     parser.add_argument(
-        "--randomcolor", type=bool, default=True, help="mask random color"
+        "--randomcolor", type=bool, default=False, help="mask random color"
     )
     parser.add_argument(
         "--point_prompt", type=str, default="[[0,0]]", help="[[x1,y1],[x2,y2]]"
@@ -79,38 +77,42 @@ def main(args):
     args.point_prompt = ast.literal_eval(args.point_prompt)
     args.box_prompt = convert_box_xywh_to_xyxy(ast.literal_eval(args.box_prompt))
     args.point_label = ast.literal_eval(args.point_label)
-    input_image = Image.open(args.img_path)
-    input_image = input_image.convert("RGB")
+    input = Image.open(args.img_path)
+    input = input.convert("RGB")
     everything_results = model(
-        input_image,
+        input,
         device=args.device,
         retina_masks=args.retina,
         imgsz=args.imgsz,
         conf=args.conf,
         iou=args.iou,
-    )
-    prompt_process = FastSAMPrompt(input_image, everything_results, device=args.device)
-    
+        )
+    bboxes = None
+    points = None
+    point_label = None
+    prompt_process = FastSAMPrompt(input, everything_results, device=args.device)
     if args.box_prompt[0][2] != 0 and args.box_prompt[0][3] != 0:
-        ann = prompt_process.box_prompt(bboxes=args.box_prompt)
-    elif args.text_prompt is not None:
+            ann = prompt_process.box_prompt(bboxes=args.box_prompt)
+            bboxes = args.box_prompt
+    elif args.text_prompt != None:
         ann = prompt_process.text_prompt(text=args.text_prompt)
     elif args.point_prompt[0] != [0, 0]:
         ann = prompt_process.point_prompt(
             points=args.point_prompt, pointlabel=args.point_label
         )
+        points = args.point_prompt
+        point_label = args.point_label
     else:
         ann = prompt_process.everything_prompt()
-
-    # Convert annotations to binary mask
-    binary_mask = np.zeros((input_image.size[1], input_image.size[0]), dtype=np.uint8)
-    for mask in ann:
-        binary_mask = np.logical_or(binary_mask, mask.cpu().numpy())
-    
-    binary_mask = (binary_mask * 255).astype(np.uint8)
-    
-    # Save the binary mask
-    cv2.imwrite(args.output + "binary_mask.png", binary_mask)
+    prompt_process.plot(
+        annotations=ann,
+        output_path=args.output+args.img_path.split("/")[-1],
+        bboxes = bboxes,
+        points = points,
+        point_label = point_label,
+        withContours=args.withContours,
+        better_quality=args.better_quality,
+    )
 
 
 

@@ -4,9 +4,9 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from .orangeScript import process_image
 from .utils import image_to_np_ndarray
 from PIL import Image
-
 
 class FastSAMPrompt:
 
@@ -88,7 +88,7 @@ class FastSAMPrompt:
              bboxes=None,
              points=None,
              point_label=None,
-             mask_random_color=True,
+             mask_random_color=False,
              better_quality=True,
              retina=False,
              withContours=True) -> np.ndarray:
@@ -186,7 +186,7 @@ class FastSAMPrompt:
              bboxes=None,
              points=None,
              point_label=None,
-             mask_random_color=True,
+             mask_random_color=False,
              better_quality=True,
              retina=False,
              withContours=True):
@@ -208,6 +208,7 @@ class FastSAMPrompt:
             os.makedirs(path)
         result = result[:, :, ::-1]
         cv2.imwrite(output_path, result)
+        process_image(output_path, result)
      
     #   CPU post process
     def fast_show_mask(
