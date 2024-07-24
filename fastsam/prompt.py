@@ -207,7 +207,11 @@ class FastSAMPrompt:
         if not os.path.exists(path):
             os.makedirs(path)
         result = result[:, :, ::-1]
-        cv2.imwrite(output_path, result)
+        directory = os.path.dirname(output_path)
+        filename = os.path.basename(output_path)
+        green_filename = f"green_{filename}"
+        green_output_path = os.path.join(directory, green_filename)
+        cv2.imwrite(green_output_path, result)
         process_image(output_path, result)
      
     #   CPU post process
@@ -235,7 +239,8 @@ class FastSAMPrompt:
         if random_color:
             color = np.random.random((msak_sum, 1, 1, 3))
         else:
-            color = np.ones((msak_sum, 1, 1, 3)) * np.array([30 / 255, 144 / 255, 255 / 255])
+            color = np.ones((msak_sum, 1, 1, 3)) * np.array([0, 255, 0]) / 255
+
         transparency = np.ones((msak_sum, 1, 1, 1)) * 0.6
         visual = np.concatenate([color, transparency], axis=-1)
         mask_image = np.expand_dims(annotation, -1) * visual
@@ -288,11 +293,7 @@ class FastSAMPrompt:
         annotation = annotation[sorted_indices]
         # Find the index of the first non-zero value at each position.
         index = (annotation != 0).to(torch.long).argmax(dim=0)
-        if random_color:
-            color = torch.rand((msak_sum, 1, 1, 3)).to(annotation.device)
-        else:
-            color = torch.ones((msak_sum, 1, 1, 3)).to(annotation.device) * torch.tensor([
-                30 / 255, 144 / 255, 255 / 255]).to(annotation.device)
+        color = torch.ones((msak_sum, 1, 1, 3)).to(annotation.device) * torch.tensor([0, 1, 0]).to(annotation.device)  # Bright green
         transparency = torch.ones((msak_sum, 1, 1, 1)).to(annotation.device) * 0.6
         visual = torch.cat([color, transparency], dim=-1)
         mask_image = torch.unsqueeze(annotation, -1) * visual
