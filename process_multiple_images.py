@@ -78,7 +78,7 @@ def parse_args():
         "--withContours", type=bool, default=False, help="draw the edges of the masks"
     )
     parser.add_argument(
-         "--microDims", type=tuple, default=(50,50), help="dimensions of image resize for shortest path"
+         "--microDims", type=str, default="21,21", help="dimensions of image resize for shortest path"
     )
     return parser.parse_args()
 
@@ -89,6 +89,7 @@ def main(args):
     args.point_prompt = ast.literal_eval(args.point_prompt)
     args.box_prompt = convert_box_xywh_to_xyxy(ast.literal_eval(args.box_prompt))
     args.point_label = ast.literal_eval(args.point_label)
+    args.microDims = ast.literal_eval("(" + args.microDims + ")") 
 
     for file_path in files_list:
         input = Image.open(file_path)
@@ -128,7 +129,7 @@ def main(args):
             point_label=point_label,
             withContours=args.withContours,
             better_quality=args.better_quality,
-            microDims=args.microDims  # Add this line to include the new parameter
+            microDims=args.microDims 
         )
 
 if __name__ == "__main__":

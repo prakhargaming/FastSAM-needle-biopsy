@@ -6,7 +6,7 @@ import ast
 import torch
 from PIL import Image
 from utils.tools import convert_box_xywh_to_xyxy
-
+from ast import literal_eval
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -110,7 +110,7 @@ def main(args):
     else:
         ann = prompt_process.everything_prompt()
 
-    microDims = tuple(map(int, args.microDims.split(',')))
+    microDims = literal_eval("(" + args.microDims + ")") 
     prompt_process.plot(
         annotations=ann,
         output_path=args.output+args.img_path.split("/")[-1],

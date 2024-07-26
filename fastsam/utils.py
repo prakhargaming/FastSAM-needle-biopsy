@@ -101,12 +101,14 @@ def process_image(output_path, img):
     
     bw_mask = cv2.GaussianBlur(bw_mask,(31,31),0)
     bw_mask = cv2.threshold(bw_mask, 100, 255, cv2.THRESH_BINARY)[1]
+    bw_mask = cv2.cvtColor(bw_mask, cv2.CV_LOAD_IMAGE_GRAYSCALE)
 
-    cv2.imwrite(output_path, bw_mask)
+    # cv2.imwrite(output_path, bw_mask)
     
     return bw_mask
 
 def resize_image(image, dims):
+    print(dims)
     if not isinstance(image, np.ndarray):
         raise ValueError("Input must be a numpy array")
     
@@ -133,20 +135,66 @@ def find_shortest_path(mask, dims=(50,50)):
     if len(white_pixels) <= 1:
         return white_pixels
     
-    # Use nearest neighbor algorithm to find an approximate shortest path
-    path = [0]  # Start with the first pixel
-    unvisited = set(range(1, len(white_pixels)))
+    # Create a grid to keep track of visited cells
+    grid = np.zeros(dims, dtype=bool)
+    for pixel in white_pixels:
+        grid[pixel[0], pixel[1]] = True
     
-    while unvisited:
-        current = path[-1]
-        distances = cdist([white_pixels[current]], white_pixels[list(unvisited)])
-        nearest = np.argmin(distances[0])
-        next_pixel = list(unvisited)[nearest]
+    # Use a modified nearest neighbor algorithm to find an approximate shortest path
+    path = [white_pixels[0]]  # Start with the first white pixel
+    current = path[-1]
+    
+    while len(path) < len(white_pixels):
+        # Get valid neighboring cells
+        neighbors = [
+            (current[0]+1, current[1]),
+            (current[0]-1, current[1]),
+            (current[0], current[1]+1),
+            (current[0], current[1]-1)
+        ]
+        
+        # Filter out neighbors that are out of bounds or not white pixels
+        valid_neighbors = [
+            n for n in neighbors 
+            if 0 <= n[0] < dims[0] and 0 <= n[1] < dims[1] and grid[n[0], n[1]]
+        ]
+        
+        if not valid_neighbors:
+            # If no valid neighbors, find the nearest unvisited white pixel
+            unvisited = set(map(tuple, white_pixels)) - set(map(tuple, path))
+            if not unvisited:
+                break
+            distances = cdist([current], list(unvisited))
+            nearest = np.argmin(distances[0])
+            next_pixel = list(unvisited)[nearest]
+        else:
+            # Choose the nearest valid neighbor
+            distances = cdist([current], valid_neighbors)
+            nearest = np.argmin(distances[0])
+            next_pixel = valid_neighbors[nearest]
+        
         path.append(next_pixel)
-        unvisited.remove(next_pixel)
+        current = next_pixel
+        grid[current[0], current[1]] = False  # Mark as visited
     
-    # Return the coordinates of the approximate shortest path
-    return white_pixels[path]
+    return np.array(path)
+
+def draw_grid(img, microDims, color=(0, 255, 0), thickness=1):
+    h, w, _ = img.shape
+    rows, cols = microDims
+    dy, dx = h / rows, w / cols
+
+    # draw vertical lines
+    for x in np.linspace(start=dx, stop=w-dx, num=cols-1):
+        x = int(round(x))
+        cv2.line(img, (x, 0), (x, h), color=color, thickness=thickness)
+
+    # draw horizontal lines
+    for y in np.linspace(start=dy, stop=h-dy, num=rows-1):
+        y = int(round(y))
+        cv2.line(img, (0, y), (w, y), color=color, thickness=thickness)
+
+    return img
 
 def visualize_path(output_path, original_image, path, resize_dims):
     # Create a copy of the original image for visualization
@@ -178,5 +226,5 @@ def visualize_path(output_path, original_image, path, resize_dims):
     cv2.circle(vis_image, scale_coord(path[0]), 5, (255, 0, 0), -1)  # Start point in blue
     cv2.circle(vis_image, scale_coord(path[-1]), 5, (0, 0, 255), -1) 
 
-    cv2.imwrite(output_path, vis_image)
+    cv2.imwrite(output_path, draw_grid(vis_image, resize_dims))
     

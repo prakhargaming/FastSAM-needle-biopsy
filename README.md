@@ -4,5 +4,6 @@ This is a fork of the original [FastSAM model](https://github.com/CASIA-IVA-Lab/
 
 FastSAM for needle biopsy is an image processing pipeline I am developing using FastSAM to quickly generate image segmentation masks from the [GigaFIBI microsope](https://opg.optica.org/abstract.cfm?uri=Microscopy-2024-MS1A.2) and other related projects in the lab. A fastest path is then generated from the mask such that it covers the tissue as quickly and effciently as possible. Here is an example of the mask generated. 
 
-![mask and image side by side comparison](image.png) 
+![mask and image side by side comparison](./images/image.png) 
 
+  
