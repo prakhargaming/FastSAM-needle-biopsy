@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from PIL import Image
-from .utils import image_to_np_ndarray, process_image, find_shortest_path, visualize_path
+from .utils import image_to_np_ndarray, process_image, travelling_salesman
 
 class FastSAMPrompt:
 
@@ -226,14 +226,14 @@ class FastSAMPrompt:
         cv2.imwrite(green_output_path, result)
 
         # Process and save mask
-        bw_mask = process_image(output_path, result)
+        print(type(result))
+        bw_mask = process_image(result)
         mask_output_path = os.path.join(mask_dir, mask_filename)
         cv2.imwrite(mask_output_path, bw_mask)
 
         # Find shortest path and visualize
-        path = find_shortest_path(bw_mask, microDims)
         path_output_path = os.path.join(path_dir, path_filename)
-        visualize_path(path_output_path, result, path, microDims)
+        travelling_salesman(bw_mask, path_output_path, resize_dims=microDims)
         
     #   CPU post process
     def fast_show_mask(

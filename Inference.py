@@ -71,7 +71,7 @@ def parse_args():
         "--withContours", type=bool, default=False, help="draw the edges of the masks"
     )
     parser.add_argument(
-        "--microDims", type=str, default="50,50", help="dimensions of image resize for shortest path (format: width,height)"
+        "--microDims", type=str, default="21,21", help="dimensions of image resize for shortest path (format: width,height)"
     )
     return parser.parse_args()
 
