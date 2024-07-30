@@ -130,11 +130,10 @@ def img_segment(
             microDims=microDims,
             plot=plot
         )
-        
+
     return (path, coordinates)
 
 if __name__ == "__main__":
-
     args = parse_args()
     img_segment(
         model_path=args.model_path,

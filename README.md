@@ -1,4 +1,4 @@
-# Fast Segment Anything for Needle Biopsy and GigaFIBI with Fereidouni Lab and UC Davis Health
+# FastSAM for Needle Biopsy and GigaFIBI with Fereidouni Lab and UC Davis Health
 
 This is a fork of the original [FastSAM model](https://github.com/CASIA-IVA-Lab/FastSAM) developed by the CASIA-IVA-Lab. All credits for their original work go to them. 
 
@@ -15,8 +15,10 @@ conda create -n FastSAM python=3.10
 conda activate FastSAM
 cd FastSAM-needle-biopsy
 pip install -r requirements.txt
+mkdir weights
+cd weights
 ```
-Now you can run the scripts below. This repo requires python 3.10. You also need to do some stuff with the required `C#` packages but I am not there yet.
+Download [this](https://drive.google.com/file/d/1m1sjY4ihXBU1fZXdQ-Xdj-mDltW-2Rqv/view?pli=1) model checkpoint and put it into the `./weights` directory. Now you can run the scripts below. This repo requires python 3.10. You also need to do some stuff with the required `C#` packages but I am not there yet. You also need some version of the `.NET` sdk. I am not actually sure if this repo is platform agnostic but I am pretending as it is.
 
 ## Usage (currently)
 
