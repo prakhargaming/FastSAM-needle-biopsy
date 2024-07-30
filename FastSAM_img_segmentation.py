@@ -6,12 +6,31 @@ from fastsam import FastSAM, FastSAMPrompt
 from utils.tools import convert_box_xywh_to_xyxy
 from os import listdir
 from os.path import isfile, join, isdir
+import argparse
 
 
 def get_files(parent_dir):
     parent_dir = os.path.normpath(parent_dir)  
     return [os.path.join(parent_dir, f) for f in listdir(parent_dir) if isfile(join(parent_dir, f))]
 
+def parse_args():
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--model_path", type=str, default="./weights/FastSAM-x.pt")
+        parser.add_argument("--img_path", type=str, default="./tissue/21548917.png")
+        parser.add_argument("--imgsz", type=int, default=1024)
+        parser.add_argument("--iou", type=float, default=0.7)
+        parser.add_argument("--conf", type=float, default=0.75)
+        parser.add_argument("--output", type=str, default="./output/")
+        parser.add_argument("--point_prompt", type=str, default="[[0,0]]")
+        parser.add_argument("--point_label", type=str, default="[0]")
+        parser.add_argument("--box_prompt", type=str, default="[[0,0,0,0]]")
+        parser.add_argument("--better_quality", type=bool, default=False)
+        parser.add_argument("--device", type=str, default=None)
+        parser.add_argument("--retina", type=bool, default=True)
+        parser.add_argument("--withContours", type=bool, default=False)
+        parser.add_argument("--microDims", type=str, default="21,21")
+        parser.add_argument("--plot", type=bool, default=True)
+        return parser.parse_args()
 
 def img_segment(
     model_path="./weights/FastSAM-x.pt",
@@ -111,7 +130,26 @@ def img_segment(
             microDims=microDims,
             plot=plot
         )
-
-        print(path, "#", coordinates)
-
+        
     return (path, coordinates)
+
+if __name__ == "__main__":
+
+    args = parse_args()
+    img_segment(
+        model_path=args.model_path,
+        img_path=args.img_path,
+        imgsz=args.imgsz,
+        iou=args.iou,
+        conf=args.conf,
+        output=args.output,
+        point_prompt=args.point_prompt,
+        point_label=args.point_label,
+        box_prompt=args.box_prompt,
+        better_quality=args.better_quality,
+        device=args.device,
+        retina=args.retina,
+        withContours=args.withContours,
+        microDims=args.microDims,
+        plot=args.plot
+    )

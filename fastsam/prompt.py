@@ -229,7 +229,6 @@ class FastSAMPrompt:
         cv2.imwrite(green_output_path, result)
 
         # Process and save mask
-        print(type(result))
         bw_mask = process_image(result)
         mask_output_path = os.path.join(mask_dir, mask_filename)
         cv2.imwrite(mask_output_path, bw_mask)
@@ -262,7 +261,7 @@ class FastSAMPrompt:
             cv2.imwrite(mask_output_path, bw_mask)
 
             path_output_path = os.path.join(path_dir, path_filename)
-            # cv2.imwrite(path_output_path, visualization)
+            cv2.imwrite(path_output_path, visualization)
 
         return path, coordinates
         

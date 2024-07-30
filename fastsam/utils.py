@@ -222,6 +222,6 @@ def travelling_salesman(image, output_path, resize_dims=(21, 21), visualize=Fals
     # Post-process the path
     coordinates, path = post_process_path(coordinates, path)
     
-    vizualization = visualize_path(bitmask, coordinates, path, output_path)
+    vizualization = visualize_path2(bitmask, coordinates, path)
     
     return coordinates, path, vizualization

@@ -1,38 +1,59 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Text;
-using System.IO;  // Add this line
+using Python.Runtime;
 
 class Program
 {
     static void Main(string[] args)
     {
-        string pythonScriptPath = @"/home/prakhargaming/FastSAM/hi.py";
-        string pythonExecutablePath = @"/home/prakhargaming/miniconda3/envs/FastSAM/bin/python3";
-        string output = ExecutePythonScript(pythonExecutablePath, pythonScriptPath);
-        Console.WriteLine("Python script output:");
-        Console.WriteLine(output);
-    }
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        // Set environment variables for Python.NET to use the Conda environment
+        string condaEnvPath = @"/home/prakhargaming/miniconda3/envs/FastSAM"; // Root of the Conda environment
 
-    static string ExecutePythonScript(string pythonPath, string scriptPath)
-    {
-        ProcessStartInfo start = new ProcessStartInfo
-        {
-            FileName = pythonPath,
-            Arguments = scriptPath,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true
-        };
+        Environment.SetEnvironmentVariable("PYTHONHOME", condaEnvPath);
+        string path = Environment.GetEnvironmentVariable("PATH");
+        path = condaEnvPath + @"/bin:" + path;
+        Environment.SetEnvironmentVariable("PATH", path);
 
-        using (Process process = Process.Start(start))
+        // Set the PythonDLL property to point to the Python shared library
+        Runtime.PythonDLL = @"/home/prakhargaming/miniconda3/envs/FastSAM/lib/libpython3.10.so"; // Adjust the path and version accordingly
+
+        // Initialize the Python runtime
+        PythonEngine.Initialize();
+
+        using (Py.GIL())
         {
-            using (StreamReader reader = process.StandardOutput)
-            {
-                string result = reader.ReadToEnd();
-                process.WaitForExit();
-                return result;
-            }
+            // Import necessary modules
+            dynamic sys = Py.Import("sys");
+            sys.path.append("/home/prakhargaming/FastSAM"); // Add the directory containing the script to the sys.path
+
+            // Execute the Python script
+            dynamic script = Py.Import("FastSAM_img_segmentation"); // Use the script name without extension
+            dynamic argsModule = Py.Import("FastSAM_img_segmentation"); // Import the same module for args
+            dynamic scriptArgs = argsModule.parse_args(); // Parse the arguments
+            dynamic leVariable = script.img_segment(
+                model_path: (string)scriptArgs.model_path,
+                img_path: (string)scriptArgs.img_path,
+                imgsz: (int)scriptArgs.imgsz,
+                iou: (float)scriptArgs.iou,
+                conf: (float)scriptArgs.conf,
+                output: (string)scriptArgs.output,
+                point_prompt: (string)scriptArgs.point_prompt,
+                point_label: (string)scriptArgs.point_label,
+                box_prompt: (string)scriptArgs.box_prompt,
+                better_quality: (bool)scriptArgs.better_quality,
+                device: (string)scriptArgs.device,
+                retina: (bool)scriptArgs.retina,
+                withContours: (bool)scriptArgs.withContours,
+                microDims: (string)scriptArgs.microDims,
+                plot: (bool)scriptArgs.plot
+            );
+            Console.WriteLine(leVariable);
         }
+
+        watch.Stop();
+        Console.WriteLine(watch.ElapsedMilliseconds);
+
+        // Shutdown the Python runtime, this takes a long time  
+        PythonEngine.Shutdown();
     }
 }
