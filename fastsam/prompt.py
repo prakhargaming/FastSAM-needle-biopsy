@@ -191,7 +191,10 @@ class FastSAMPrompt:
          better_quality=True,
          retina=False,
          withContours=True,
-         microDims=(50, 50)):
+         microDims=(50, 50),
+         plot=False,
+         save_visual=True):
+        
         if len(annotations) == 0:
             return None
         result = self.plot_to_result(
@@ -233,7 +236,35 @@ class FastSAMPrompt:
 
         # Find shortest path and visualize
         path_output_path = os.path.join(path_dir, path_filename)
-        travelling_salesman(bw_mask, path_output_path, resize_dims=microDims)
+        path, coordinates, visualization = travelling_salesman(bw_mask, path_output_path, resize_dims=microDims)
+        
+        if save_visual:
+            # Create subdirectories
+            base_dir = os.path.dirname(output_path)
+            green_dir = os.path.join(base_dir, "green")
+            path_dir = os.path.join(base_dir, "path")
+            mask_dir = os.path.join(base_dir, "mask")
+
+            for dir_path in [green_dir, path_dir, mask_dir]:
+                if not os.path.exists(dir_path):
+                    os.makedirs(dir_path)
+
+            # Prepare filenames
+            filename = os.path.basename(output_path)
+            green_filename = f"green_{filename}"
+            path_filename = f"path_{filename}"
+            mask_filename = f"mask_{filename}"
+
+            green_output_path = os.path.join(green_dir, green_filename)
+            cv2.imwrite(green_output_path, result)
+
+            mask_output_path = os.path.join(mask_dir, mask_filename)
+            cv2.imwrite(mask_output_path, bw_mask)
+
+            path_output_path = os.path.join(path_dir, path_filename)
+            # cv2.imwrite(path_output_path, visualization)
+
+        return path, coordinates
         
     #   CPU post process
     def fast_show_mask(

@@ -111,7 +111,7 @@ def main(args):
         ann = prompt_process.everything_prompt()
 
     microDims = literal_eval("(" + args.microDims + ")") 
-    prompt_process.plot(
+    path , coords = prompt_process.plot(
         annotations=ann,
         output_path=args.output+args.img_path.split("/")[-1],
         bboxes=bboxes,

@@ -160,6 +160,41 @@ def visualize_path(bitmask, coordinates, path, output_path):
     plt.savefig(output_path)
     plt.close()
 
+def visualize_path2(bitmask, coordinates, path):
+    """
+    Visualizes the path on the bitmask and returns the visualization as a NumPy array.
+
+    Parameters:
+        bitmask (np.ndarray): The bitmask image.
+        coordinates (np.ndarray): The coordinates of the points.
+        path (list): The path of the coordinates.
+
+    Returns:
+        np.ndarray: The visualization as an image array.
+    """
+    plt.figure(figsize=(10, 10))
+    plt.imshow(bitmask, cmap='gray')
+    
+    for i in range(len(path) - 1):
+        start = coordinates[path[i]]
+        end = coordinates[path[i + 1]]
+        plt.plot([start[1], end[1]], [start[0], end[0]], 'r-')
+    
+    plt.scatter(coordinates[:, 1], coordinates[:, 0], c='blue')
+    plt.scatter(coordinates[path[0]][1], coordinates[path[0]][0], c='green', s=100, label='Start', edgecolor='black')
+    plt.scatter(coordinates[path[-1]][1], coordinates[path[-1]][0], c='red', s=100, label='End', edgecolor='black')
+    
+    plt.legend()
+
+    # Convert the plot to a NumPy array
+    plt.draw()
+    image_array = np.frombuffer(plt.gcf().canvas.tostring_rgb(), dtype=np.uint8)
+    image_array = image_array.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+    
+    plt.close()
+    return image_array
+
+
 def post_process_path(coordinates, path):
     new_path = [path[0]]
     new_coordinates = coordinates.copy()
@@ -175,7 +210,7 @@ def post_process_path(coordinates, path):
     
     return new_coordinates, new_path
 
-def travelling_salesman(image, output_path, resize_dims=(21, 21)):
+def travelling_salesman(image, output_path, resize_dims=(21, 21), visualize=False):
     bw = resize_image(image, resize_dims)
     bitmask = generate_bitmask(bw)
     
@@ -187,7 +222,6 @@ def travelling_salesman(image, output_path, resize_dims=(21, 21)):
     # Post-process the path
     coordinates, path = post_process_path(coordinates, path)
     
-    # Visualize and save
-    visualize_path(bitmask, coordinates, path, output_path)
+    vizualization = visualize_path(bitmask, coordinates, path, output_path)
     
-    return coordinates, path
+    return coordinates, path, vizualization
