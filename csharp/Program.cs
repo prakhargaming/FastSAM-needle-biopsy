@@ -31,12 +31,12 @@ class Program
             dynamic argsModule = Py.Import("FastSAM_img_segmentation"); // Import the same module for args
             dynamic scriptArgs = argsModule.parse_args(); // Parse the arguments
             dynamic leVariable = script.img_segment(
-                model_path: (string)scriptArgs.model_path,
-                img_path: (string)scriptArgs.img_path,
+                model_path: "/home/prakhargaming/FastSAM/weights/FastSAM-x.pt",
+                img_path: "/home/prakhargaming/FastSAM/tissue/21548917.png",
                 imgsz: (int)scriptArgs.imgsz,
                 iou: (float)scriptArgs.iou,
                 conf: (float)scriptArgs.conf,
-                output: (string)scriptArgs.output,
+                output: "/home/prakhargaming/FastSAM/output",
                 point_prompt: (string)scriptArgs.point_prompt,
                 point_label: (string)scriptArgs.point_label,
                 box_prompt: (string)scriptArgs.box_prompt,
