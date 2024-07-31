@@ -381,11 +381,13 @@ class FastSAMPrompt:
         ax.imshow(show_cpu)
 
     # clip
+    # text prompt functionality is not relevant to this project so its been commented out here
     @torch.no_grad()
     def retrieve(self, model, preprocess, elements, search_text: str, device) -> int:
         preprocessed_images = [preprocess(image).to(device) for image in elements]
         try:
            import clip  # for linear_assignment
+            
     
         except (ImportError, AssertionError, AttributeError):
            from ultralytics.yolo.utils.checks import check_requirements
