@@ -131,6 +131,7 @@ def img_segment(
             plot=plot
         )
 
+    print(path, coordinates)
     return (path, coordinates)
 
 if __name__ == "__main__":
