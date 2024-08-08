@@ -18,5 +18,5 @@ gradio==3.35.2
 
 
 # Ultralytics-----------------------------------
-# ultralytics == 8.0.120
+ultralytics == 8.0.120
 

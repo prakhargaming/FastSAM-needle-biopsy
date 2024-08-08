@@ -1,9 +1,10 @@
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from tsp_solver.greedy import solve_tsp
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import cv2
 from PIL import Image
-import matplotlib.pyplot as plt
-from tsp_solver.greedy import solve_tsp
 
 def adjust_bboxes_to_image_border(boxes, image_shape, threshold=20):
     '''Adjust bounding boxes to stick to image border if they are within a certain threshold.
@@ -160,6 +161,7 @@ def visualize_path(bitmask, coordinates, path, output_path):
     plt.savefig(output_path)
     plt.close()
 
+
 def visualize_path2(bitmask, coordinates, path):
     """
     Visualizes the path on the bitmask and returns the visualization as a NumPy array.
@@ -172,27 +174,27 @@ def visualize_path2(bitmask, coordinates, path):
     Returns:
         np.ndarray: The visualization as an image array.
     """
-    plt.figure(figsize=(10, 10))
-    plt.imshow(bitmask, cmap='gray')
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.imshow(bitmask, cmap='gray')
     
     for i in range(len(path) - 1):
         start = coordinates[path[i]]
         end = coordinates[path[i + 1]]
-        plt.plot([start[1], end[1]], [start[0], end[0]], 'r-')
+        ax.plot([start[1], end[1]], [start[0], end[0]], 'r-')
     
-    plt.scatter(coordinates[:, 1], coordinates[:, 0], c='blue')
-    plt.scatter(coordinates[path[0]][1], coordinates[path[0]][0], c='green', s=100, label='Start', edgecolor='black')
-    plt.scatter(coordinates[path[-1]][1], coordinates[path[-1]][0], c='red', s=100, label='End', edgecolor='black')
+    ax.scatter(coordinates[:, 1], coordinates[:, 0], c='blue')
+    ax.scatter(coordinates[path[0]][1], coordinates[path[0]][0], c='green', s=100, label='Start', edgecolor='black')
+    ax.scatter(coordinates[path[-1]][1], coordinates[path[-1]][0], c='red', s=100, label='End', edgecolor='black')
     
-    plt.legend()
+    ax.legend()
 
     # Convert the plot to a NumPy array
-    plt.draw()
-    image_array = np.frombuffer(plt.gcf().canvas.tostring_rgb(), dtype=np.uint8)
-    image_array = image_array.reshape(plt.gcf().canvas.get_width_height()[::-1] + (3,))
+    canvas = FigureCanvasAgg(fig)
+    canvas.draw()
+    image_array = np.array(canvas.buffer_rgba())
     
-    plt.close()
-    return image_array
+    plt.close(fig)
+    return image_array[:, :, :3]  # Return only RGB channels
 
 
 def post_process_path(coordinates, path):
@@ -224,4 +226,4 @@ def travelling_salesman(image, output_path, resize_dims=(21, 21), visualize=Fals
     
     vizualization = visualize_path2(bitmask, coordinates, path)
     
-    return coordinates, path, vizualization
+    return path, coordinates, vizualization
