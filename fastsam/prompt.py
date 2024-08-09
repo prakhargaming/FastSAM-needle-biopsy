@@ -235,7 +235,7 @@ class FastSAMPrompt:
 
         # Find shortest path and visualize
         path_output_path = os.path.join(path_dir, path_filename)
-        path, coordinates, visualization = travelling_salesman(bw_mask, path_output_path, resize_dims=microDims)
+        path, coordinates, visualization, bitmap = travelling_salesman(bw_mask, path_output_path, resize_dims=microDims)
         
         if save_visual:
             # Create subdirectories
@@ -263,7 +263,7 @@ class FastSAMPrompt:
             path_output_path = os.path.join(path_dir, path_filename)
             cv2.imwrite(path_output_path, visualization)
 
-        return path, coordinates
+        return path, coordinates, bitmap
         
     #   CPU post process
     def fast_show_mask(

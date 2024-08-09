@@ -109,10 +109,7 @@ def process_image(img, output_path=None):
 
     return bw_mask
 
-def resize_image(image, dims):
-    if not isinstance(image, np.ndarray):
-        raise ValueError("Input must be a numpy array")
-    
+def resize_image(image, dims):    
     resized_image = cv2.resize(image, (dims[0], dims[1]), interpolation=cv2.INTER_AREA)
     
     if len(resized_image.shape) == 3:
@@ -212,7 +209,22 @@ def post_process_path(coordinates, path):
     
     return new_coordinates, new_path
 
-def travelling_salesman(image, output_path, resize_dims=(21, 21), visualize=False):
+def crop_bitmask(bitmask):
+    '''Crop the bitmask to the bounding box containing all the ones.'''
+    # Find coordinates of all non-zero values (ones)
+    rows = np.any(bitmask, axis=1)
+    cols = np.any(bitmask, axis=0)
+
+    # Find the bounding box of non-zero values
+    row_min, row_max = np.where(rows)[0][[0, -1]]
+    col_min, col_max = np.where(cols)[0][[0, -1]]
+
+    # Crop the bitmask to the bounding box
+    cropped_bitmask = bitmask[row_min:row_max+1, col_min:col_max+1]
+
+    return cropped_bitmask
+
+def travelling_salesman(image, output_path, resize_dims=(35, 27), visualize=False):
     bw = resize_image(image, resize_dims)
     bitmask = generate_bitmask(bw)
     
@@ -220,10 +232,17 @@ def travelling_salesman(image, output_path, resize_dims=(21, 21), visualize=Fals
     coordinates = find_white_pixel_coordinates(bitmask)
     distance_matrix = generate_distance_matrix(coordinates)
     path = solve_tsp(distance_matrix)
-    
+
+    # Crop the bitmask
+    cropped_bitmask = crop_bitmask(bitmask)
+
+    # Save cropped bitmask
+    plt.imsave("cropped_persona.jpg", cropped_bitmask, cmap="gray")
+
     # Post-process the path
     coordinates, path = post_process_path(coordinates, path)
     
-    vizualization = visualize_path2(bitmask, coordinates, path)
+    # Visualize the path on the cropped bitmask
+    vizualization = visualize_path2(cropped_bitmask, coordinates, path)
     
-    return path, coordinates, vizualization
+    return path, coordinates, vizualization, cropped_bitmask

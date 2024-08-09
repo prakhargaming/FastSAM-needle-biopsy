@@ -30,23 +30,6 @@ def crop_image(image_path, top=100, bottom=100, left=100, right=100):
     cropped_img = img[top:height-bottom, left:width-right]
     return cropped_img
 
-def custom_formatwarning(msg, *args, **kwargs):
-    return f"WARNING: {str(msg)}\n"
-
-warnings.formatwarning = custom_formatwarning
-
-def custom_showwarning(message, category, filename, lineno, file=None, line=None):
-    print(f"WARNING: {message}", file=sys.stderr)
-
-warnings.showwarning = custom_showwarning
-
-# Redirect warnings to stderr
-warnings.showwarning = lambda *args, **kwargs: print(warnings.formatwarning(*args, **kwargs), file=sys.stderr)
-
-# Use this for actual errors
-def print_error(msg):
-    print(f"ERROR: {msg}", file=sys.stderr)
-
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
@@ -69,8 +52,9 @@ def parse_args():
         parser.add_argument("--device", type=str, default=None)
         parser.add_argument("--retina", type=bool, default=True)
         parser.add_argument("--withContours", type=bool, default=False)
-        parser.add_argument("--microDims", type=str, default="21,21")
+        parser.add_argument("--microDims", type=str, default="35,27")
         parser.add_argument("--plot", type=bool, default=True)
+        parser.add_argument("--crop_pixels", type=int, default=0)
         return parser.parse_args()
 
 def img_segment(
@@ -78,7 +62,7 @@ def img_segment(
     img_path="./tissue/",
     imgsz=1024,
     iou=0.7,
-    conf=0.75,
+    conf=0.7,
     output="./output/",
     point_prompt="[[0,0]]",
     point_label="[0]",
@@ -88,7 +72,8 @@ def img_segment(
     retina=True,
     withContours=False,
     microDims="35,27",
-    plot=True
+    plot=True,
+    crop_pixels=0
 ):
     """
     Segments images and charts the shortest path using the FastSAM model and saves the segmented images to the output directory.
@@ -109,6 +94,7 @@ def img_segment(
         withContours (bool): Flag to draw the edges of the masks.
         microDims (str): Dimensions of image resize for shortest path in the format "width,height".
         plot (bool): Flag to save and return plot of the results.
+        crop_pixels (int): How many pixels should the input image be cropped.
         
     Returns:
         coords (list[tuple(int, int)]): list of tuple coordinates to visit
@@ -131,15 +117,15 @@ def img_segment(
     box_prompt = convert_box_xywh_to_xyxy(ast.literal_eval(box_prompt))
     point_label = ast.literal_eval(point_label)
     microDims = ast.literal_eval("(" + microDims + ")")
+    error = None
 
     for file_path in files_list:
         try:
             input_img_cv = cv2.imread(file_path)
 
-            crop_pixels = 100
-        
-            height, width = input_img_cv.shape[:2]
-            input_img_cv = input_img_cv[crop_pixels:height-crop_pixels, crop_pixels:width-crop_pixels]
+            if crop_pixels > 0:
+                height, width = input_img_cv.shape[:2]
+                input_img_cv = input_img_cv[crop_pixels:height-crop_pixels, crop_pixels:width-crop_pixels]
 
             # Convert OpenCV image to PIL Image
             input_img = Image.fromarray(cv2.cvtColor(input_img_cv, cv2.COLOR_BGR2RGB))
@@ -169,7 +155,7 @@ def img_segment(
 
             output_path = os.path.join(output, os.path.basename(file_path))
 
-            path, coordinates = prompt_process.plot(
+            path, coordinates, bitmask = prompt_process.plot(
                 annotations=ann,
                 output_path=output_path,
                 bboxes=bboxes,
@@ -181,18 +167,23 @@ def img_segment(
                 plot=plot
             )
         except Exception as e:
-            eprint("Error processing this image. Please use the manual scanning feature.")
-            eprint(e)
-            return
+            eprint("Error processing this image", file_path, "Please use the manual scanning feature.")
+            eprint("More details:", e)
+            error = e
+            continue
+    
+    if error != None:
+        return
 
     path = convert_to_list(path)
     coordinates = convert_to_list(coordinates)
+    bitmask = convert_to_list(bitmask)
 
     ordered_coords = [coordinates[i] for i in path]
 
-    print(ordered_coords)
+    print(json.dumps({"path": path, "coordinates": ordered_coords, "bitmask": bitmask}))
 
-    return json.dumps({"path": path, "coordinates": ordered_coords})
+    return json.dumps({"path": path, "coordinates": ordered_coords, "bitmask": bitmask})
 
 if __name__ == "__main__":
     args = parse_args()
@@ -211,5 +202,6 @@ if __name__ == "__main__":
         retina=args.retina,
         withContours=args.withContours,
         microDims=args.microDims,
-        plot=args.plot
+        plot=args.plot,
+        crop_pixels=args.crop_pixels
     )
